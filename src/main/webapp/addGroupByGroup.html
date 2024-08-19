@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>添加用户组</title>
+  <script src="layui/layui.js"></script>
+  <link href="layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+<div class="layui-container">
+  <form class="layui-form layui-form-pane">
+    <div class="layui-form-item">
+      <label class="layui-form-label">用户组名</label>
+      <div class="layui-input-inline" style="width: 300px">
+        <input type="text" name="groupName" placeholder="请输入" lay-verify="required" autocomplete="off"
+               class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item">
+      <table class="layui-table" lay-size="sm" id="groupTable"></table>
+    </div>
+    <div class="layui-form-item">
+      <button class="layui-btn" lay-submit lay-filter="submitBtn">立即提交</button>
+    </div>
+  </form>
+</div>
+<script>
+
+  function child(dataFromFather) {
+    layui.use('table', function () {
+      var table = layui.table;
+      var form = layui.form;
+      $ = layui.jquery;
+
+      var myDone = function(res) {
+        var tbl = $('#groupTable').next('.layui-table-view');
+
+        //.记下当前页数据，Ajax 请求的数据集，对应你后端返回的数据字段
+        pageData = res.data;
+        var len = pageData.length;
+
+        //.遍历当前页数据，对比已选中项中的 id
+        for (var i = 0; i < len; i++) {
+          if (layui.data('checked', pageData[i]['id'])) {
+            //.选中它，目前版本没有任何与数据或表格 id 相关的标识，不太好搞，土办法选择它吧
+            tbl.find('table>tbody>tr').eq(i).find('td').eq(0).find('input[type=checkbox]').prop('checked', true);
+          }
+        }
+
+        //.PS：table 中点击选择后会记录到 table.cache，没暴露出来，也不能 mytbl.renderForm('checkbox');
+        //.暂时只能这样渲染表单
+        form.render('checkbox');
+      };
+
+      // 已知数据渲染
+      var inst = table.render({
+        elem: '#groupTable',
+        id:'groupTable',
+        height: 352,
+        width: 450,
+        cols: [[ //表头
+          {
+            type: 'checkbox',
+            width: '5%'
+          },
+          {
+            field: 'gid',
+            title: 'GID',
+            width: '20%',
+            sort: true,
+            align: 'center'
+          },{
+            field: 'groupName',
+            title: '用户组名称',
+            width: '25%',
+            align: 'center'
+          }, {
+            field: 'countNum',
+            title: '用户组人数',
+            width: '25%',
+            align: 'center'
+          },{
+            title: '操作',
+            minWidth: '30%',
+            toolbar: '#tableTabBar',
+            align: 'center'
+          }]],
+        skin: 'line', // 表格风格
+        data: dataFromFather,
+        //even: true,
+        page: true, // 是否显示分页
+        limit: 10, // 每页默认显示的数量
+        done: function (res, curr, count) {
+          myDone(res);
+        }
+      });
+      table.on('checkbox(test)', function(obj) {
+        console.log(obj);
+        //.全选或单选数据集不一样
+        var data = obj.type == 'one' ? [obj.data] : pageData;
+
+        //.遍历数据
+        $.each(data, function(k, v) {
+          //.假设你数据中 id 是唯一关键字
+          if (obj.checked) {
+            //.增加已选中项
+            layui.data('checked', {
+              key: v.id, value: v
+            });
+          } else {
+            //.删除
+            layui.data('checked', {
+              key: v.id, remove: true
+            });
+          }
+        });
+      });
+
+      form.on('submit(submitBtn)', function (data) {
+        var mySelected = [];
+        $.each(layui.data('checked'), function(k, v) {
+          mySelected.push(v);
+        });
+        console.log(mySelected);
+        let idstr = "";
+        if (mySelected.length == 0) {
+          layer.msg('请选择至少一个成员');
+          return false;
+        } else {
+          for (let i = 0; i < mySelected.length; i++)
+            idstr += mySelected[i].gid + ",";
+        }
+        console.log(idstr);
+        $.post('addGroup', {"groupName": data.field.groupName,"groupsID": idstr,"action":"addByGroup"}, function (d) {
+          console.log(d);
+          if (d.code == 0) {
+            layer.msg('新建了一个包含' + d.msg + '个成员的用户组',{time : 600}, function (index) {
+              var index = parent.layer.getFrameIndex(window.name);
+              parent.layer.close(index);
+            })
+          } else {
+            layer.msg('新建失败，原因：'+ d.msg,{time : 600});
+          }
+        }, 'json')
+        return false;
+      });
+    });
+  }
+</script>
+</body>
+</html>

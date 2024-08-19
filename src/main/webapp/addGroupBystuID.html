@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>添加用户组</title>
+    <script src="layui/layui.js"></script>
+    <link href="layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+<div class="layui-container">
+    <form class="layui-form layui-form-pane">
+        <div class="layui-form-item">
+            <label class="layui-form-label">用户组名</label>
+            <div class="layui-input-inline" style="width: 300px">
+                <input type="text" name="groupName" placeholder="请输入" lay-verify="required" autocomplete="off" required
+                       class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label" style="width: 200px;">请以半角逗号“,”分割输入用户组中的学生([学号],[学号],...)</label>
+            <textarea name="stuIDs" placeholder="学号" class="layui-textarea" style="height: 400px"></textarea>
+        </div>
+        <div class="layui-form-item">
+            <button class="layui-btn" lay-submit lay-filter="submitBtn">立即提交</button>
+        </div>
+    </form>
+</div>
+<script>
+    layui.use(function () {
+        var form = layui.form;
+        $ = layui.jquery;
+        form.on('submit(submitBtn)', function (data) {
+            console.log(data.field);
+            $.post('addGroup', {"groupName": data.field.groupName,"stuIDs": data.field.stuIDs,"action":"addBystuID"}, function (d) {
+                console.log(d);
+                if (d.code == 0) {
+                    layer.msg('新建了一个包含' + d.msg + '个成员的用户组',{time : 600}, function (index) {
+                        var index = parent.layer.getFrameIndex(window.name);
+                        parent.layer.close(index);
+                    })
+                } else {
+                    layer.msg('新建失败，原因：'+ d.msg,{time : 600});
+                }
+            }, 'json')
+            return false;
+        });
+    });
+</script>
+</body>
+</html>

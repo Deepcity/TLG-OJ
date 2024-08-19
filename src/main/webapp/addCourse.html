@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>添加用户组</title>
+  <script src="layui/layui.js"></script>
+  <link href="layui/css/layui.css" rel="stylesheet">
+</head>
+<body>
+<div class="layui-container">
+  <form class="layui-form layui-form-pane">
+    <div class="layui-form-item">
+      <label class="layui-form-label">课程名</label>
+      <div class="layui-input-inline" style="width: 300px">
+        <input type="text" name="courseName" placeholder="请输入" lay-verify="required" autocomplete="off" required
+               class="layui-input">
+      </div>
+    </div>
+    <div class="layui-form-item" style="text-align: center">
+      <button class="layui-btn btn-large layui-btn-radius" lay-submit lay-filter="submitBtn">立即提交</button>
+    </div>
+  </form>
+</div>
+<script>
+  layui.use(function () {
+    var form = layui.form;
+    $ = layui.jquery;
+    form.on('submit(submitBtn)', function (data) {
+      console.log(data.field);
+      $.post('addCourse', {"courseName": data.field.courseName,"action": "addByCourseName"}, function (d) {
+        console.log(d);
+        if (d.code == 0) {
+          layer.msg('新建了' + d.msg + '个课程',{time : 600}, function (index) {
+            var index = parent.layer.getFrameIndex(window.name);
+            parent.layer.close(index);
+          })
+        } else {
+          layer.msg('新建失败，原因：'+ d.msg,{time : 600});
+        }
+      }, 'json')
+      return false;
+    });
+  });
+</script>
+</body>
+</html>
